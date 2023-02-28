@@ -1,0 +1,201 @@
+version: "0.0.1"
+
+volumes:
+  postgresql_sonarqube:
+  postgresql_data_sonarqube:
+  postgresql_syncope:
+  postgresql_data_syncope:
+
+services:
+##### INFRASTRUCTURE
+   # A reverse proxy so that the apps can communicate as if they werent in docker, and on the same uri
+   reverse-proxy:
+    image: nginx:latest
+    restart: always
+    ports:
+      - "54321:80"
+    volumes:
+      - $SONARQUBE_HOME/config/nginx/nginx.conf:/etc/nginx/nginx.conf
+
+##### /INFRASTRUCTURE
+
+
+
+##### DATA  
+   keymaster: 
+     image: zookeeper:3.7.0
+     restart: always
+     depends_on:
+      reverse-proxy:
+        condition: service_started
+
+   sonarqube_db:
+    image: postgres:12
+    depends_on:
+      reverse-proxy:
+        condition: service_started
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+    volumes:
+      - postgresql_sonarqube:/var/lib/postgresql
+      - postgresql_data_sonarqube:/var/lib/postgresql/data
+
+   syncope_db: 
+     depends_on:
+      reverse-proxy:
+        condition: service_started
+     image: postgres:latest
+     restart: always
+     environment:
+       POSTGRES_DB: syncope
+       POSTGRES_USER: syncope
+       POSTGRES_PASSWORD: syncope
+     volumes:
+      - postgresql_syncope:/var/lib/postgresql
+      - postgresql_data_syncope:/var/lib/postgresql/data
+##### /DATA
+##### IAM
+   syncope: 
+     depends_on:
+      syncope_db:
+        condition: service_started
+      keymaster:
+        condition: service_started
+     image: apache/syncope:3.0.1
+     ports:
+       - "18080:8080"
+     restart: always
+     environment:
+       SPRING_PROFILES_ACTIVE: docker,postgresql
+       DB_URL: jdbc:postgresql://syncope_db:5432/syncope?stringtype=unspecified
+       DB_USER: syncope
+       DB_PASSWORD: syncope
+       DB_POOL_MAX: 20
+       DB_POOL_MIN: 5
+       OPENJPA_REMOTE_COMMIT: sjvm
+       KEYMASTER_ADDRESS: keymaster:2181
+       KEYMASTER_USERNAME: ${KEYMASTER_USERNAME:-}
+       KEYMASTER_PASSWORD: ${KEYMASTER_PASSWORD:-}
+       SERVICE_DISCOVERY_ADDRESS: http://syncope:8080/syncope/rest/
+       ANONYMOUS_USER: ${ANONYMOUS_USER}
+       ANONYMOUS_KEY: ${ANONYMOUS_KEY}
+     volumes:
+      - $SONARQUBE_HOME/logs/syncope/core:/opt/syncope/logs
+      - $SONARQUBE_HOME/config/syncope/core:/opt/syncope/conf
+
+   syncope-console: 
+     depends_on:
+      syncope:
+        condition: service_started
+      keymaster:
+        condition: service_started
+     image: apache/syncope-console:3.0.1
+     ports:
+       - "28080:8080"
+     restart: always
+     environment:
+       SPRING_PROFILES_ACTIVE: docker
+       KEYMASTER_ADDRESS: keymaster:2181
+       KEYMASTER_USERNAME: ${KEYMASTER_USERNAME:-}
+       KEYMASTER_PASSWORD: ${KEYMASTER_PASSWORD:-}
+       SERVICE_DISCOVERY_ADDRESS: http://syncope-console:8080/syncope-console/
+       ANONYMOUS_USER: ${ANONYMOUS_USER}
+       ANONYMOUS_KEY: ${ANONYMOUS_KEY}
+     volumes:
+      - $SONARQUBE_HOME/logs/syncope/console:/opt/syncope/logs
+      - $SONARQUBE_HOME/config/syncope/console:/opt/syncope/conf
+
+   syncope-enduser: 
+     depends_on:
+      syncope-console:
+        condition: service_started
+      syncope:
+        condition: service_started
+      keymaster:
+        condition: service_started
+     image: apache/syncope-enduser:3.0.1
+     ports:
+       - "38080:8080"
+     restart: always
+     environment:
+       SPRING_PROFILES_ACTIVE: docker
+       KEYMASTER_ADDRESS: keymaster:2181
+       KEYMASTER_USERNAME: ${KEYMASTER_USERNAME:-}
+       KEYMASTER_PASSWORD: ${KEYMASTER_PASSWORD:-}
+       SERVICE_DISCOVERY_ADDRESS: http://syncope-enduser:8080/syncope-enduser/
+       ANONYMOUS_USER: ${ANONYMOUS_USER}
+       ANONYMOUS_KEY: ${ANONYMOUS_KEY}
+     volumes:
+      - $SONARQUBE_HOME/logs/syncope/enduser:/opt/syncope/logs
+      - $SONARQUBE_HOME/config/syncope/enduser:/opt/syncope/conf
+
+   syncope-wa: 
+     depends_on:
+      syncope-console:
+        condition: service_started
+      syncope:
+        condition: service_started
+      keymaster:
+        condition: service_started
+     image: apache/syncope-wa:3.0.1
+     ports:
+       - "48080:8080"
+     restart: always
+     environment:
+       SPRING_PROFILES_ACTIVE: docker
+       KEYMASTER_ADDRESS: keymaster:2181
+       KEYMASTER_USERNAME: ${KEYMASTER_USERNAME:-}
+       KEYMASTER_PASSWORD: ${KEYMASTER_PASSWORD:-}
+       SERVICE_DISCOVERY_ADDRESS: http://syncope-wa:8080/syncope-wa/
+       CAS_SERVER_NAME: http://syncope-wa:8080
+       ANONYMOUS_USER: ${ANONYMOUS_USER}
+       ANONYMOUS_KEY: ${ANONYMOUS_KEY}
+     volumes:
+      - $SONARQUBE_HOME/logs/syncope/wa:/opt/syncope/logs
+      - $SONARQUBE_HOME/config/syncope/wa:/opt/syncope/conf
+
+   syncope-sra: 
+     depends_on:
+      syncope-console:
+        condition: service_started
+      syncope:
+        condition: service_started
+      keymaster:
+        condition: service_started
+     image: apache/syncope-sra:3.0.1
+     ports:
+       - "58080:8080"
+     restart: always
+     environment:
+       SPRING_PROFILES_ACTIVE: docker
+       KEYMASTER_ADDRESS: keymaster:2181
+       KEYMASTER_USERNAME: ${KEYMASTER_USERNAME:-}
+       KEYMASTER_PASSWORD: ${KEYMASTER_PASSWORD:-}
+       SERVICE_DISCOVERY_ADDRESS: http://syncope-sra:8080/syncope-sra
+       ANONYMOUS_USER: ${ANONYMOUS_USER}
+       ANONYMOUS_KEY: ${ANONYMOUS_KEY}
+     volumes:
+      - $SONARQUBE_HOME/logs/syncope/sra:/opt/syncope/logs
+      - $SONARQUBE_HOME/config/syncope/sra:/opt/syncope/conf
+##### /IAM
+##### CODE & ANALYSIS   
+   sonarqube:
+    image: sonarqube:community
+    depends_on:
+      sonarqube_db:
+        condition: service_started
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube_db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+      SONAR_UPDATECENTER_ACTIVATE: false
+    volumes:
+      - $SONARQUBE_HOME/data/sonarqube:/opt/sonarqube/data
+      - $SONARQUBE_HOME/extensions/sonarqube:/opt/sonarqube/extensions
+      - $SONARQUBE_HOME/logs/sonarqube:/opt/sonarqube/logs
+      - $SONARQUBE_HOME/config/sonarqube:/opt/sonarqube/conf
+    ports:
+      - "9000:9000"
+
+##### /CODE & ANALYSIS

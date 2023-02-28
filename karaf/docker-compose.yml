@@ -1,0 +1,21 @@
+version: '3.3'
+
+services:
+     # Karaf is is a modulith runtime, supporting several frameworks and programming model
+   karaf:
+    image: apache/karaf:latest
+    expose:
+      - "1099"
+      - "44444"
+      - "8101"
+      - "8181"
+    ports:
+      - "8101:8101"
+      - "1099:1099"
+      - "44444:44444"
+      - "8181:8181"
+    command: karaf
+    stdin_open: true
+    tty: true
+    volumes:
+      - $KARAF_HOST_HOME/etc:/opt/apache-karaf/etc
