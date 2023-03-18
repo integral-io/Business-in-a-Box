@@ -30,6 +30,9 @@ They map from the same locations on the docker host to the service's expected lo
 * InfraInABox/sonarqube/volumes/extensions/sonarqube/** -> /opt/sonarqube/conf
 * InfraInABox/sonarqube/volumes/data/sonarqube/** -> /opt/sonarqube/log
 
+###### Configuring SonarQube for OIDC
+- Set the 
+
 
 ##### Apache Archivia *
 An artifact repository
@@ -38,13 +41,17 @@ An artifact repository
 ##### Apache Syncope
 A full featured Identity Provider (IdP) and Identity Access Management (IAM) suite -- allowing OpenId Connect (OIDC), and Single-Sign On (SSO) for the applications deployed here. It includes several pieces: Console, Web Access (WA), Secured Remote Access (SRA), and End User. The Console is used to administor Users, Roles, and IAM generally. WA and SRA are both used to handle logins between systems each with a specific target. Enduser allows users to manage their identity as its known to the IdP. 
 
+Some [very helpful and useful blogs about Apache Syncope](https://www.tirasa.net/en/blog/apache-syncope)
+
 * The Console (Default credentials are `admin` and `passsword`)
 * WA & SRA - the Access portal for SSO
 
 ###### Set up 
 
 The following volumes are required to have access to the configuration, logs, and data that syncope uses. 
-They map from the same locations on the docker host to the service's expected location. I've found it's quite easy to copy over the default configuration in the container to the host so that Syncope can be easily configured.  
+They map from the same locations on the docker host to the service's expected location. I've found it's quite easy to copy over the default configuration in the container to the host so that Syncope can be easily configured. 
+
+Once Syncope is set up you can congigure Sonarqube - it needs a plugin to work with OIDC but SAML is also available. 
 
 * InfraInABox/sonarqube/volumes/config/syncope/** -> /opt/syncope/conf
 * InfraInABox/sonarqube/volumes/logs/syncope/** -> /opt/syncope/log

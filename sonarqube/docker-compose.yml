@@ -13,7 +13,7 @@ services:
     image: nginx:latest
     restart: always
     ports:
-      - "54321:80"
+      - "80:80"
     volumes:
       - $SONARQUBE_HOME/config/nginx/nginx.conf:/etc/nginx/nginx.conf
 
@@ -62,7 +62,7 @@ services:
         condition: service_started
       keymaster:
         condition: service_started
-     image: apache/syncope:3.0.1
+     image: apache/syncope:4.0.0-SNAPSHOT
      ports:
        - "18080:8080"
      restart: always
@@ -81,7 +81,7 @@ services:
        ANONYMOUS_USER: ${ANONYMOUS_USER}
        ANONYMOUS_KEY: ${ANONYMOUS_KEY}
      volumes:
-      - $SONARQUBE_HOME/logs/syncope/core:/opt/syncope/logs
+      - $SONARQUBE_HOME/logs/syncope/core:/opt/syncope/log
       - $SONARQUBE_HOME/config/syncope/core:/opt/syncope/conf
 
    syncope-console: 
@@ -90,7 +90,7 @@ services:
         condition: service_started
       keymaster:
         condition: service_started
-     image: apache/syncope-console:3.0.1
+     image: apache/syncope-console:4.0.0-SNAPSHOT
      ports:
        - "28080:8080"
      restart: always
@@ -99,11 +99,11 @@ services:
        KEYMASTER_ADDRESS: keymaster:2181
        KEYMASTER_USERNAME: ${KEYMASTER_USERNAME:-}
        KEYMASTER_PASSWORD: ${KEYMASTER_PASSWORD:-}
-       SERVICE_DISCOVERY_ADDRESS: http://syncope-console:8080/syncope-console/
+       SERVICE_DISCOVERY_ADDRESS: http://syncope-console:8080/console/
        ANONYMOUS_USER: ${ANONYMOUS_USER}
        ANONYMOUS_KEY: ${ANONYMOUS_KEY}
      volumes:
-      - $SONARQUBE_HOME/logs/syncope/console:/opt/syncope/logs
+      - $SONARQUBE_HOME/logs/syncope/console:/opt/syncope/log
       - $SONARQUBE_HOME/config/syncope/console:/opt/syncope/conf
 
    syncope-enduser: 
@@ -114,7 +114,7 @@ services:
         condition: service_started
       keymaster:
         condition: service_started
-     image: apache/syncope-enduser:3.0.1
+     image: apache/syncope-enduser:4.0.0-SNAPSHOT
      ports:
        - "38080:8080"
      restart: always
@@ -123,11 +123,11 @@ services:
        KEYMASTER_ADDRESS: keymaster:2181
        KEYMASTER_USERNAME: ${KEYMASTER_USERNAME:-}
        KEYMASTER_PASSWORD: ${KEYMASTER_PASSWORD:-}
-       SERVICE_DISCOVERY_ADDRESS: http://syncope-enduser:8080/syncope-enduser/
+       SERVICE_DISCOVERY_ADDRESS: http://syncope-enduser:8080/user/
        ANONYMOUS_USER: ${ANONYMOUS_USER}
        ANONYMOUS_KEY: ${ANONYMOUS_KEY}
      volumes:
-      - $SONARQUBE_HOME/logs/syncope/enduser:/opt/syncope/logs
+      - $SONARQUBE_HOME/logs/syncope/enduser:/opt/syncope/log
       - $SONARQUBE_HOME/config/syncope/enduser:/opt/syncope/conf
 
    syncope-wa: 
@@ -138,7 +138,7 @@ services:
         condition: service_started
       keymaster:
         condition: service_started
-     image: apache/syncope-wa:3.0.1
+     image: apache/syncope-wa:4.0.0-SNAPSHOT
      ports:
        - "48080:8080"
      restart: always
@@ -147,12 +147,12 @@ services:
        KEYMASTER_ADDRESS: keymaster:2181
        KEYMASTER_USERNAME: ${KEYMASTER_USERNAME:-}
        KEYMASTER_PASSWORD: ${KEYMASTER_PASSWORD:-}
-       SERVICE_DISCOVERY_ADDRESS: http://syncope-wa:8080/syncope-wa/
+       SERVICE_DISCOVERY_ADDRESS: http://syncope-wa:8080/wa/
        CAS_SERVER_NAME: http://syncope-wa:8080
        ANONYMOUS_USER: ${ANONYMOUS_USER}
        ANONYMOUS_KEY: ${ANONYMOUS_KEY}
      volumes:
-      - $SONARQUBE_HOME/logs/syncope/wa:/opt/syncope/logs
+      - $SONARQUBE_HOME/logs/syncope/wa:/opt/syncope/log
       - $SONARQUBE_HOME/config/syncope/wa:/opt/syncope/conf
 
    syncope-sra: 
@@ -163,7 +163,7 @@ services:
         condition: service_started
       keymaster:
         condition: service_started
-     image: apache/syncope-sra:3.0.1
+     image: apache/syncope-sra:4.0.0-SNAPSHOT
      ports:
        - "58080:8080"
      restart: always
@@ -172,11 +172,11 @@ services:
        KEYMASTER_ADDRESS: keymaster:2181
        KEYMASTER_USERNAME: ${KEYMASTER_USERNAME:-}
        KEYMASTER_PASSWORD: ${KEYMASTER_PASSWORD:-}
-       SERVICE_DISCOVERY_ADDRESS: http://syncope-sra:8080/syncope-sra
+       SERVICE_DISCOVERY_ADDRESS: http://syncope-sra:8080/sra
        ANONYMOUS_USER: ${ANONYMOUS_USER}
        ANONYMOUS_KEY: ${ANONYMOUS_KEY}
      volumes:
-      - $SONARQUBE_HOME/logs/syncope/sra:/opt/syncope/logs
+      - $SONARQUBE_HOME/logs/syncope/sra:/opt/syncope/log
       - $SONARQUBE_HOME/config/syncope/sra:/opt/syncope/conf
 ##### /IAM
 ##### CODE & ANALYSIS   
