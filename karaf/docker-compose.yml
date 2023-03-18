@@ -18,4 +18,4 @@ services:
     stdin_open: true
     tty: true
     volumes:
-      - $KARAF_HOST_HOME/etc:/opt/apache-karaf/etc
+      - $KARAF_HOST_HOME/config:/opt/apache-karaf/etc

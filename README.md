@@ -3,6 +3,7 @@
 *This is not a productiob ready installation. There are many configration changes required for production readiness.*
 
 Several docker compose files to build up an entire cvloud infrastructure including
+* Basic Infrastructure
 * Source Code Management and Analysis
 * Identity Access Management
 * Cloud Application Runtimes
@@ -12,6 +13,12 @@ Several volumes will need to be created so the various images' configurations an
 
 Because the Docker containers and Docker host end up using different URLs, we have to set up a reverse proxy. But don't worry, its in docker -- all that means is that the browser and the backend apps won't know the difference. This also means more configuration for the containers like SSL certificates so the reverse proxy can securely communicate with the backends.
 
+#### Basic Infrastructure:
+##### NginX
+Nginx is a reverse proxy. It'll let the outside world communicate with the inside of the docker container transparently. the proxy needs:
+- An SSL certificate to deliver to clients.
+- An SSL certificate to use between the services and the proxy.
+- and the reverse proxy rules that map the two together. 
 
 #### Source Code Management and Analysis
 The following tools are useful for source code development, management, analysis, and deployment.
@@ -31,7 +38,10 @@ They map from the same locations on the docker host to the service's expected lo
 * InfraInABox/sonarqube/volumes/data/sonarqube/** -> /opt/sonarqube/log
 
 ###### Configuring SonarQube for OIDC
-- Set the 
+- Sonarqube requires a plugin to work with OIDC
+
+###### Configuring SonarQube for SAML
+Sonarqube can use SAML to perform AuthNZ. 
 
 
 ##### Apache Archivia *
@@ -147,10 +157,51 @@ This defines our "method of authentcation." More specifically it defines a way s
         - Add all Supported Grant Types and Supported Response Types
         - Ignore Logout Uri
 
+<Exmample TokenPayload>
+{
+  "sub": "richard",
+  "firstname": "richard",
+  "oauthClientId": "sonarqube",
+  "roles": [],
+  "iss": "http://syncope-wa:8080/wa/oidc",
+  "client_id": "sonarqube",
+  "grant_type": "AUTHORIZATION_CODE",
+  "permissions": [],
+  "scope": [
+    "email",
+    "openid",
+    "profile"
+  ],
+  "serverIpAddress": "172.21.0.9",
+  "longTermAuthenticationRequestTokenUsed": false,
+  "state": "s1o66i0m4qh7rjpqqmgq1briv0",
+  "exp": 1678688222,
+  "iat": 1678659422,
+  "jti": "AT-1-h3ekNAjsnnvyzxhS6tSusJPcFtjXs-qe",
+  "email": "testing@example.com",
+  "clientIpAddress": "172.21.0.1",
+  "isFromNewLogin": true,
+  "authenticationDate": "2023-03-12T22:16:50.616179345Z",
+  "successfulAuthenticationHandlers": "Default Authentication Module",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+  "nonce": "",
+  "credentialType": "UsernamePasswordCredential",
+  "samlAuthenticationStatementAuthMethod": "urn:oasis:names:tc:SAML:1.0:am:password",
+  "aud": "http://localhost:9000/oauth2/callback/oidc",
+  "authenticationMethod": "Default Authentication Module",
+  "scopes": [
+    "openid",
+    "profile",
+    "email"
+  ]
+}
+</Example>
+
 
 To harden your syncope system and get it ready for production:
     * Change the default admin password and force its rotation every month; or disable the user.
     * Remove Unused algorthyms for the OIDC ans OAUTH2 configuration. 
+    * Modify the logging configuration to not emit tokens.
 
 
 
