@@ -9,60 +9,56 @@ volumes:
 services:
 ##### INFRASTRUCTURE
    # A reverse proxy so that the apps can communicate as if they werent in docker, and on the same uri
-   reverse-proxy:
+  reverse-proxy:
     image: nginx:latest
     restart: always
     ports:
       - "80:80"
     volumes:
-      - $SONARQUBE_HOME/config/nginx/nginx.conf:/etc/nginx/nginx.conf
-
-##### /INFRASTRUCTURE
-
-
-
-##### DATA  
-   keymaster: 
-     image: zookeeper:3.7.0
-     restart: always
-     depends_on:
+      - $Nginx_HOME/config/nginx.conf:/etc/nginx/nginx.conf
+  # Used with Syncope 
+  keymaster: 
+    image: zookeeper:3.7.0 # zookeeper is a service discovery tool. it helps syncope keep track of itself.
+    restart: always
+    depends_on:
       reverse-proxy:
         condition: service_started
-
-   sonarqube_db:
+  ##### /INFRASTRUCTURE
+##### DATA
+  sonarqube_db:
     image: postgres:12
     depends_on:
       reverse-proxy:
         condition: service_started
     environment:
-      POSTGRES_USER: sonar
+      POSTGRES_USER: sonar ## PROD Change these -- pull then from the environment and have them encrypted at rest
       POSTGRES_PASSWORD: sonar
     volumes:
       - postgresql_sonarqube:/var/lib/postgresql
       - postgresql_data_sonarqube:/var/lib/postgresql/data
 
-   syncope_db: 
+  syncope_db: 
      depends_on:
       reverse-proxy:
         condition: service_started
      image: postgres:latest
      restart: always
      environment:
-       POSTGRES_DB: syncope
+       POSTGRES_DB: syncope ## PROD Change these -- pull then from the environment and have them encrypted at rest
        POSTGRES_USER: syncope
        POSTGRES_PASSWORD: syncope
      volumes:
       - postgresql_syncope:/var/lib/postgresql
       - postgresql_data_syncope:/var/lib/postgresql/data
-##### /DATA
+  ##### /DATA
 ##### IAM
-   syncope: 
+  syncope: 
      depends_on:
       syncope_db:
         condition: service_started
       keymaster:
         condition: service_started
-     image: apache/syncope:4.0.0-SNAPSHOT
+     image: apache/syncope:3.0.2
      ports:
        - "18080:8080"
      restart: always
@@ -74,39 +70,39 @@ services:
        DB_POOL_MAX: 20
        DB_POOL_MIN: 5
        OPENJPA_REMOTE_COMMIT: sjvm
-       KEYMASTER_ADDRESS: keymaster:2181
+       KEYMASTER_ADDRESS: keymaster:2181 ## PROD Change these -- pull then from the environment and have them encrypted at rest
        KEYMASTER_USERNAME: ${KEYMASTER_USERNAME:-}
        KEYMASTER_PASSWORD: ${KEYMASTER_PASSWORD:-}
        SERVICE_DISCOVERY_ADDRESS: http://syncope:8080/syncope/rest/
-       ANONYMOUS_USER: ${ANONYMOUS_USER}
+       ANONYMOUS_USER: ${ANONYMOUS_USER} ## PROD Change these -- pull then from the environment and have them encrypted at rest
        ANONYMOUS_KEY: ${ANONYMOUS_KEY}
      volumes:
-      - $SONARQUBE_HOME/logs/syncope/core:/opt/syncope/log
-      - $SONARQUBE_HOME/config/syncope/core:/opt/syncope/conf
+      - $Syncope_HOME/logs/core:/opt/syncope/log
+      - $Syncope_HOME/config/core:/opt/syncope/conf
 
-   syncope-console: 
+  syncope-console: 
      depends_on:
       syncope:
         condition: service_started
       keymaster:
         condition: service_started
-     image: apache/syncope-console:4.0.0-SNAPSHOT
+     image: apache/syncope-console:3.0.2
      ports:
        - "28080:8080"
      restart: always
      environment:
        SPRING_PROFILES_ACTIVE: docker
        KEYMASTER_ADDRESS: keymaster:2181
-       KEYMASTER_USERNAME: ${KEYMASTER_USERNAME:-}
+       KEYMASTER_USERNAME: ${KEYMASTER_USERNAME:-} ## PROD Change these -- pull then from the environment and have them encrypted at rest
        KEYMASTER_PASSWORD: ${KEYMASTER_PASSWORD:-}
        SERVICE_DISCOVERY_ADDRESS: http://syncope-console:8080/console/
-       ANONYMOUS_USER: ${ANONYMOUS_USER}
+       ANONYMOUS_USER: ${ANONYMOUS_USER} ## PROD Change these -- pull then from the environment and have them encrypted at rest
        ANONYMOUS_KEY: ${ANONYMOUS_KEY}
      volumes:
-      - $SONARQUBE_HOME/logs/syncope/console:/opt/syncope/log
-      - $SONARQUBE_HOME/config/syncope/console:/opt/syncope/conf
+      - $Syncope_HOME/logs/console:/opt/syncope/log
+      - $Syncope_HOME/config/console:/opt/syncope/conf
 
-   syncope-enduser: 
+  syncope-enduser: 
      depends_on:
       syncope-console:
         condition: service_started
@@ -114,7 +110,7 @@ services:
         condition: service_started
       keymaster:
         condition: service_started
-     image: apache/syncope-enduser:4.0.0-SNAPSHOT
+     image: apache/syncope-enduser:3.0.2
      ports:
        - "38080:8080"
      restart: always
@@ -127,10 +123,10 @@ services:
        ANONYMOUS_USER: ${ANONYMOUS_USER}
        ANONYMOUS_KEY: ${ANONYMOUS_KEY}
      volumes:
-      - $SONARQUBE_HOME/logs/syncope/enduser:/opt/syncope/log
-      - $SONARQUBE_HOME/config/syncope/enduser:/opt/syncope/conf
+      - $Syncope_HOME/logs/enduser:/opt/syncope/log
+      - $Syncope_HOME/config/enduser:/opt/syncope/conf
 
-   syncope-wa: 
+  syncope-wa: 
      depends_on:
       syncope-console:
         condition: service_started
@@ -138,7 +134,7 @@ services:
         condition: service_started
       keymaster:
         condition: service_started
-     image: apache/syncope-wa:4.0.0-SNAPSHOT
+     image: apache/syncope-wa:3.0.2
      ports:
        - "48080:8080"
      restart: always
@@ -152,10 +148,10 @@ services:
        ANONYMOUS_USER: ${ANONYMOUS_USER}
        ANONYMOUS_KEY: ${ANONYMOUS_KEY}
      volumes:
-      - $SONARQUBE_HOME/logs/syncope/wa:/opt/syncope/log
-      - $SONARQUBE_HOME/config/syncope/wa:/opt/syncope/conf
+      - $Syncope_HOME/logs/wa:/opt/syncope/log
+      - $Syncope_HOME/config/wa:/opt/syncope/conf
 
-   syncope-sra: 
+  syncope-sra: 
      depends_on:
       syncope-console:
         condition: service_started
@@ -163,7 +159,7 @@ services:
         condition: service_started
       keymaster:
         condition: service_started
-     image: apache/syncope-sra:4.0.0-SNAPSHOT
+     image: apache/syncope-sra:3.0.2
      ports:
        - "58080:8080"
      restart: always
@@ -176,11 +172,34 @@ services:
        ANONYMOUS_USER: ${ANONYMOUS_USER}
        ANONYMOUS_KEY: ${ANONYMOUS_KEY}
      volumes:
-      - $SONARQUBE_HOME/logs/syncope/sra:/opt/syncope/log
-      - $SONARQUBE_HOME/config/syncope/sra:/opt/syncope/conf
-##### /IAM
-##### CODE & ANALYSIS   
-   sonarqube:
+      - $Syncope_HOME/logs/sra:/opt/syncope/log
+      - $Syncope_HOME/config/sra:/opt/syncope/conf
+  ##### /IAM
+##### CODE & ANALYSIS
+  # gitlab-web:
+  #   image: 'gitlab/gitlab-ce:latest'
+  #   restart: always
+  #   hostname: 'gitlab'
+  #   environment:
+  #     GITLAB_OMNIBUS_CONFIG: |
+  #       # external_url 'https://gitlab'
+  #       # Add any other gitlab.rb configuration here, each on its own line
+  #   ports:
+  #     - '22080:80'
+  #     - '22443:443'
+  #     - '22022:22'
+  #   volumes:
+  #     - '$Gitlab_HOME/config:/etc/gitlab'
+  #     - '$Gitlab_HOME/logs:/var/log/gitlab'
+  #     - '$Gitlab_HOME/data:/var/opt/gitlab'
+  #   shm_size: '256m'
+  # gitlab-runner:
+  #   image: gitlab/gitlab-runner:alpine
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 4 
+
+  sonarqube:
     image: sonarqube:community
     depends_on:
       sonarqube_db:
@@ -191,11 +210,10 @@ services:
       SONAR_JDBC_PASSWORD: sonar
       SONAR_UPDATECENTER_ACTIVATE: false
     volumes:
-      - $SONARQUBE_HOME/data/sonarqube:/opt/sonarqube/data
-      - $SONARQUBE_HOME/extensions/sonarqube:/opt/sonarqube/extensions
-      - $SONARQUBE_HOME/logs/sonarqube:/opt/sonarqube/logs
-      - $SONARQUBE_HOME/config/sonarqube:/opt/sonarqube/conf
+      - $Sonarqube_HOME/data:/opt/sonarqube/data
+      - $Sonarqube_HOME/extensions:/opt/sonarqube/extensions
+      - $Sonarqube_HOME/logs:/opt/sonarqube/logs
+      - $Sonarqube_HOME/config:/opt/sonarqube/conf
     ports:
       - "9000:9000"
-
-##### /CODE & ANALYSIS
+  ##### /CODE & ANALYSIS

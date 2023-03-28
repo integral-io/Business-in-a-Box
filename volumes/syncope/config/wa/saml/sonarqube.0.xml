@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" validUntil="2023-03-20T16:28:05Z" cacheDuration="PT604800S" entityID="http://localhost/wa/sp/sonarqube">
+<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" validUntil="2025-03-20T16:28:05Z" cacheDuration="PT604800S" entityID="http://localhost/wa/sp/sonarqube">
   <md:SPSSODescriptor AuthnRequestsSigned="false" WantAssertionsSigned="false" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
     <md:KeyDescriptor use="signing">
       <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
