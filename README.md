@@ -247,6 +247,8 @@ This defines our "method of authentcation." More specifically it defines a way s
     - Click "Finish"
 * User (Realms > User)
     - 
+* User (Realms > Group)
+    - 
 - Sonarqube OIDC (WA > Client Applications > OIDCRP)
     - Set the realm to `/`
     - Set the name to Sonarqube (or some other app name)
@@ -263,42 +265,20 @@ This defines our "method of authentcation." More specifically it defines a way s
     - Ignore Logout Uri
 
 - Sonarqube SAML (WA > Client Applications > SAML2SP)
-    ###### SAML Prequesite
-    We must genrerate a private key, a certificate, and a SAML Service Provider's metadata file. The certificate and key will be loaded into Sonarqube when we configure it's end of the SAML protocol. Syncope will also need the certificate. We'll also need to create a PKCS8 format of the key. These files must be securely transmitted and stored - they are _critical_ to the security of the SAML authentication process.
+    #### SAML Prequesite
+    We must genrerate a private key, a certificate, and a SAML Service Provider's metadata file. The certificate and key will be loaded into Sonarqube when we configure it's end of the SAML protocol. Syncope will also need the certificate. We'll also need to create a PKCS8 formatted version of the private key. These files must be securely transmitted and stored - they are _critical_ to the security of the SAML authentication process.
     Once the cert, and the 2 versions of the key are in place, you can [create a SAML metadata for the service provider](https://www.samltool.com/sp_metadata.php) *Beware: private keys added there are sent to their server. Trust at your own risk and do not use it for production keys.  
-        - ```
-        $ openssl req -x509 -newkey rsa:4096 -keyout sonarqube.key -out sonarqube.crt -sha256 -days 365 # generate a new key and cert that'll last for a year.
-        $ openssl pkcs8 -topk8 -in sonarqube.key -out sonarqube.pkcs8.key -nocrypt # create PKCS8 version of the private key
-        ```
-        - Example Metadata file:
-        ```
-        <?xml version="1.0"?>
-            <md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" validUntil="2025-03-20T16:28:05Z" cacheDuration="PT604800S" entityID="http://localhost/wa/sp/sonarqube"> <!-- The EntityId must match what goes into Syncope IdP -->
-            <md:SPSSODescriptor AuthnRequestsSigned="false" WantAssertionsSigned="false" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
-                <md:KeyDescriptor use="signing">
-                <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
-                    <ds:X509Data>
-                    <ds:X509Certificate> MIIDazCCA ... 5pOSdlc </ds:X509Certificate> <!-- This is the certificate that goes into snycope -->
-                    </ds:X509Data>
-                </ds:KeyInfo>
-                </md:KeyDescriptor>
-                <md:KeyDescriptor use="encryption">
-                <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
-                    <ds:X509Data>
-                     <!-- This certificate may or may not be the same as the one above, 
-                     it used for a different purpose so the same or different should work.
-                     Know your threat model and risks to make an informed decision. 
-                     -->
-                    <ds:X509Certificate> MIIDazCCA ... 5pOSdlc </ds:X509Certificate>
-                    </ds:X509Data>
-                </ds:KeyInfo>
-                </md:KeyDescriptor>
-                <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="http://localhost:9000"/> <!-- this is where sonarqube lives. -->
-                <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</md:NameIDFormat>
-                <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="http://localhost:9000/oauth2/callback/saml" index="1"/> <!-- this is where sonarqube expects to recieve the callback defined in the SAML Protocol. -->
-            </md:SPSSODescriptor>
-            </md:EntityDescriptor>
-        ```
+    
+    ###### Protect these files like you protect your identity because that's literally what these files are - the identity of Sonarqube as far as Syncope is concerned. If these are leaked then the authentication process is no longer secure. In production store them in a secrets manager. 
+    ```
+    $ openssl req -x509 -newkey rsa:4096 -keyout sonarqube.key -out sonarqube.crt -sha256 -days 365 # generate a new key and cert that'll last for a year.
+    $ openssl pkcs8 -topk8 -in sonarqube.key -out sonarqube.pkcs8.key -nocrypt # create PKCS8 version of the private key
+    ```
+    [Example Metadata file](./volumes/syncope/config/wa/saml/sonarqube.0.xml) This file is the file used by Syncope to validate the data Sonarqube sends it when doing a SAML exchange. All Service Provider metadata files will look similar with different values for various field such as `EntityId` and `validUntil`. 
+    ```
+        Double check your validUntil field -- it must be a future date.
+    ```
+    - Have the Prerequistes above in place. 
     - Click the Green Plus Icon and in the Popup menu:
         - Set the Realm to `\`.
         - Set the Name to `sonarqube`.
