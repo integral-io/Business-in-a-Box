@@ -2,7 +2,7 @@
 
 #### *DISCLAIMER: This is NOT a production ready installation. There are many configration changes required for production readiness. DO NOT USE AS IS IN PRODUCTION, OR DO SO AT YOUR OWN RISK. MANY CHANGES ARE NOTED HERE BUT THIS NOT CAPTURE ALL OF THE REQUIRED CHANGES. This is a work in progress. You are warned.*
 
-Several docker compose files to build up an entire cvloud infrastructure including
+A single docker compose file to build an entire cloud for any business including
 * [Basic Infrastructure](#Basic-Infrastructure)
 * [Source Code Management and Analysis](#source-code-management-and-analysis)
 * [Identity Access Management](#identity-access-management)
