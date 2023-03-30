@@ -69,21 +69,22 @@ They map from the same locations on the docker host to the service's expected lo
 | InfraInABox/volumes/sonarqube/data/**                 | /opt/sonarqube/log  |
 
 ###### Configuring SonarQube for SAML
-Sonarqube can use SAML to perform AuthNZ.  Syncope needs a [Service Provider Metadata file](sonarqube/volumes/syncope/config/wa/saml/sonarqube.0.xml) for Sonarqube, which itself needs a certificate if you want the added security of message signing (you do in prod). This file will be loaded into Syncope, and the data in it will also be added to Sonarqube. Sonarqube's documentation](https://docs.sonarqube.org/latest/instance-administration/authentication/saml/overview/) on SAML is useful. The `sonar.auth.saml.sp.privateKey.secured`, and `sonar.auth.saml.sp.certificate.secured` define the Private Key and Certficate (which can be generated [quite easily](https://www.baeldung.com/openssl-self-signed-cert)).
+Sonarqube can use SAML to perform AuthNZ.  Syncope needs a [Service Provider (SP) Metadata file](sonarqube/volumes/syncope/config/wa/saml/sonarqube.0.xml) for Sonarqube, which itself needs a certificate if you want the added security of message signing (you do in prod). This file will be loaded into Syncope, and the data in it will also be added to Sonarqube. [Sonarqube's documentation](https://docs.sonarqube.org/latest/instance-administration/authentication/saml/overview/) on SAML is useful. The `sonar.auth.saml.sp.privateKey.secured`, and `sonar.auth.saml.sp.certificate.secured` define the Private Key and Certficate which can be generated [quite easily](https://www.baeldung.com/openssl-self-signed-cert#creating-a-self-signed-certificate) but do note that the key needs to be converted to PKCS8 format - this step is [defined below as Syncope's SAML Prequesite](#SAML-Prequesite) -- every SAML implementation requires this if they want to use message siging (again, you do).
 
-We will now configure Sonarqube to use Syncope as the Identity Provider (IdP). Login to sonarqube as Admin, and navigate to Administration > Authentication > SAML:
-    - Set the Application Id to `http://localhost/wa/sp/sonarqube` -- this must match what is defined in Syncope.
-    - Set the Provider Name to `Syncope` -- this will display on the login page.
-    - Set the Provider Id to ` http://localhost/wa/idp` -- this in the Issuer provided by Syncope's IdP Metadata. 
-    - Set the SAML Login URL to `http://localhost/wa/idp/profile/SAML2/Redirect/SSO` -- this is also defined in Syncope's IdP Metadata.
-    - Set Identity Provider Certificate to the value from Syncope's IdP Metadata. 
-    - Set SAML user name attribute to `username`
-    - Set SAML user name attribute to `name`
-    - Set SAML user email attribute to `email`
-    - Set SAML group attribute to `groups`
-    - Ensure Sign Requests is _checked_.
-    - Set the Service provider private key to the PKCS8 key generated in the [Syncope + Sonarqube SAML Prereqs](#SAML-Prequesite).
-    - Set the Service provider certificate to the certificate generated in the [Syncope + Sonarqube SAML Prereqs](#SAML-Prequesite).
+We will now configure Sonarqube to use Syncope as the Identity Provider (IdP).
+- Login to sonarqube as Admin, and navigate to Administration > Authentication > SAML:
+- Set the Application Id to `http://localhost/wa/sp/sonarqube` -- this must match what is defined in Syncope.
+- Set the Provider Name to `Syncope` -- this will display on the login page.
+- Set the Provider Id to ` http://localhost/wa/idp` -- this in the Issuer provided by Syncope's IdP Metadata. 
+- Set the SAML Login URL to `http://localhost/wa/idp/profile/SAML2/Redirect/SSO` -- this is also defined in Syncope's IdP Metadata.
+- Set Identity Provider Certificate to the value from Syncope's IdP Metadata. 
+- Set SAML user name attribute to `username`
+- Set SAML user name attribute to `name`
+- Set SAML user email attribute to `email`
+- Set SAML group attribute to `groups`
+- Ensure Sign Requests is _checked_.
+- Set the Service provider private key to the PKCS8 key generated in the [Syncope + Sonarqube SAML Prereqs](#SAML-Prequesite).
+- Set the Service provider certificate to the certificate generated in the [Syncope + Sonarqube SAML Prereqs](#SAML-Prequesite).
 
 ##### Apache Archivia *
 An artifact repository - it stores and provides access to code artifacts such as executables, jars, etc. 
@@ -271,7 +272,7 @@ This defines our "method of authentcation." More specifically it defines a way s
     
     ###### Protect these files like you protect your identity because that's literally what these files are - the identity of Sonarqube as far as Syncope is concerned. If these are leaked then the authentication process is no longer secure. In production store them in a secrets manager. 
     ```
-    $ openssl req -x509 -newkey rsa:4096 -keyout sonarqube.key -out sonarqube.crt -sha256 -days 365 # generate a new key and cert that'll last for a year.
+    $ openssl req -x509 -newkey rsa:4096 -keyout sonarqube.key -out sonarqube.crt -days 365 # generate a new key and cert that'll last for a year.
     $ openssl pkcs8 -topk8 -in sonarqube.key -out sonarqube.pkcs8.key -nocrypt # create PKCS8 version of the private key
     ```
     [Example Metadata file](./volumes/syncope/config/wa/saml/sonarqube.0.xml) This file is the file used by Syncope to validate the data Sonarqube sends it when doing a SAML exchange. All Service Provider metadata files will look similar with different values for various field such as `EntityId` and `validUntil`. 
