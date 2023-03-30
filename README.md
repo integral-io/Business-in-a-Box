@@ -9,29 +9,40 @@ Several docker compose files to build up an entire cvloud infrastructure includi
 * [Cloud Application Runtimes](#cloud-application-runtimes)
 * [Business Applications](#business-applications)
 
+#### Definitions
+ - `$Repo_root` when used below where you cloned the repository to. Unless you renamed it when you cloned it, it'll be `<folder you cloned into>/business-in-a-box`
+
 ### General Set Up
-Install Docker.
+- Install Docker.
+- Create file locations
+    Several locations will need to be created so the various images' configurations and logs are accessible and modifyable outside the image. Some of these may already exist. 
+    | Sonarqube                                  |                     |
+    | Host                                       | Container           |
+    |--------------------------------------------|---------------------|
+    | $Repo_root/volumes/sonarqube/config        | /opt/sonarqube/conf |
+    | $Repo_root/volumes/sonarqube/logs          | /opt/sonarqube/log  |
+    | $Repo_root/volumes/extensions/sonarqube    | /opt/sonarqube/conf |
+    | $Repo_root/volumes/sonarqube/data          | /opt/sonarqube/log  |
+    |                                            |                     |
+    | Syncope                                    |                     |
+    | Host                                       | Container           |
+    | $Repo_root/volumes/syncope/logs/core       | /opt/syncope/log    |
+    | $Repo_root/volumes/syncope/config/core     | /opt/syncope/conf   |
+    | $Repo_root/volumes/syncope/logs/console    | /opt/syncope/log    |
+    | $Repo_root/volumes/syncope/config/console  | /opt/syncope/conf   |
+    | $Repo_root/volumes/syncope/logs/wa         | /opt/syncope/log    |
+    | $Repo_root/volumes/syncope/config/wa       | /opt/syncope/conf   |
+    | $Repo_root/volumes/syncope/logs/sra        | /opt/syncope/log    |
+    | $Repo_root/volumes/syncope/config/sra      | /opt/syncope/conf   |
+    | $Repo_root/volumes/syncope/logs/enduser    | /opt/syncope/log    |
+    | $Repo_root/volumes/syncope/config/enduser  | /opt/syncope/conf   |
 
-Several locations will need to be created so the various images' configurations and logs are accessible and modifyable outside the image.
-| Host                                        | Container           |
-|---------------------------------------------|---------------------|
-| InfraInABox/volumes/sonarqube/config        | /opt/sonarqube/conf |
-| InfraInABox/volumes/sonarqube/logs          | /opt/sonarqube/log  |
-| InfraInABox/volumes/extensions/sonarqube    | /opt/sonarqube/conf |
-| InfraInABox/volumes/sonarqube/data          | /opt/sonarqube/log  |
-|---------------------------------------------|---------------------|
-| InfraInABox/volumes/syncope/logs/core       | /opt/syncope/log    |
-| InfraInABox/volumes/syncope/config/core     | /opt/syncope/conf   |
-| InfraInABox/volumes/syncope/logs/console    | /opt/syncope/log    |
-| InfraInABox/volumes/syncope/config/console  | /opt/syncope/conf   |
-| InfraInABox/volumes/syncope/logs/wa         | /opt/syncope/log    |
-| InfraInABox/volumes/syncope/config/wa       | /opt/syncope/conf   |
-| InfraInABox/volumes/syncope/logs/sra        | /opt/syncope/log    |
-| InfraInABox/volumes/syncope/config/sra      | /opt/syncope/conf   |
-| InfraInABox/volumes/syncope/logs/enduser    | /opt/syncope/log    |
-| InfraInABox/volumes/syncope/config/enduser  | /opt/syncope/conf   |
+- Once those directories are in place, you can `docker-compose up` and wait for the the system to come online and get healthy (several services may restart during bootup).
 
-Once those directories are in place, you can `docker-compose up` and wait for the the system to come online and get healthy (several services may restart during bootup).
+- Once the system is healthly, begin configuring the following systems in order:
+    - [Configuring Syncope](#configuring-syncope)
+    - [Configuring Sonarqube](#configuring-sonarqube)
+    - [More to come...](#work-in-progress)
   
 
 #### Basic Infrastructure:
@@ -63,13 +74,13 @@ The following volumes are required to have access to the configuration, logs, an
 They map from the same locations on the docker host to the service's expected location.
 | Host                                                  | Container           |
 |-------------------------------------------------------|---------------------|
-| InfraInABox/volumes/sonarqube/config/**               | /opt/sonarqube/conf |
-| InfraInABox/volumes/sonarqube/logs/**                 | /opt/sonarqube/log  |
-| InfraInABox/volumes/sonarqube/extensions/**           | /opt/sonarqube/conf |
-| InfraInABox/volumes/sonarqube/data/**                 | /opt/sonarqube/log  |
+| $Repo_root/volumes/sonarqube/config/**               | /opt/sonarqube/conf |
+| $Repo_root/volumes/sonarqube/logs/**                 | /opt/sonarqube/log  |
+| $Repo_root/volumes/sonarqube/extensions/**           | /opt/sonarqube/conf |
+| $Repo_root/volumes/sonarqube/data/**                 | /opt/sonarqube/log  |
 
-###### Configuring SonarQube for SAML
-Sonarqube can use SAML to perform AuthNZ.  Syncope needs a [Service Provider (SP) Metadata file](sonarqube/volumes/syncope/config/wa/saml/sonarqube.0.xml) for Sonarqube, which itself needs a certificate if you want the added security of message signing (you do in prod). This file will be loaded into Syncope, and the data in it will also be added to Sonarqube. [Sonarqube's documentation](https://docs.sonarqube.org/latest/instance-administration/authentication/saml/overview/) on SAML is useful. The `sonar.auth.saml.sp.privateKey.secured`, and `sonar.auth.saml.sp.certificate.secured` define the Private Key and Certficate which can be generated [quite easily](https://www.baeldung.com/openssl-self-signed-cert#creating-a-self-signed-certificate) but do note that the key needs to be converted to PKCS8 format - this step is [defined below as Syncope's SAML Prequesite](#SAML-Prequesite) -- every SAML implementation requires this if they want to use message siging (again, you do).
+###### Configuring SonarQube
+Sonarqube can use SAML to perform AuthNZ.  Syncope needs a [Service Provider (SP) Metadata file](sonarqube/volumes/syncope/config/wa/saml/sonarqube.0.xml) for Sonarqube, which itself needs a certificate if you want the added security of message signing (you do in prod). This file will be loaded into Syncope, and the data in it will also be added to Sonarqube. [Sonarqube's documentation](https://docs.sonarqube.org/latest/instance-administration/authentication/saml/overview/) on SAML is useful. The `sonar.auth.saml.sp.privateKey.secured`, and `sonar.auth.saml.sp.certificate.secured` define the Private Key and Certficate which can be generated [quite easily](https://www.baeldung.com/openssl-self-signed-cert#creating-a-self-signed-certificate) but do note that the key needs to be converted to PKCS8 format. This step is defined below as [Syncope's SAML Prequesite](#SAML-Prequesite) -- every SAML implementation requires this if they want to use message siging (again, you do).
 
 We will now configure Sonarqube to use Syncope as the Identity Provider (IdP).
 - Login to sonarqube as Admin, and navigate to Administration > Authentication > SAML:
@@ -78,7 +89,7 @@ We will now configure Sonarqube to use Syncope as the Identity Provider (IdP).
 - Set the Provider Id to ` http://localhost/wa/idp` -- this in the Issuer provided by Syncope's IdP Metadata. 
 - Set the SAML Login URL to `http://localhost/wa/idp/profile/SAML2/Redirect/SSO` -- this is also defined in Syncope's IdP Metadata.
 - Set Identity Provider Certificate to the value from Syncope's IdP Metadata. 
-- Set SAML user name attribute to `username`
+- Set SAML user login attribute to `username`
 - Set SAML user name attribute to `name`
 - Set SAML user email attribute to `email`
 - Set SAML group attribute to `groups`
@@ -103,16 +114,16 @@ Some [very helpful and useful blogs about Apache Syncope](https://www.tirasa.net
 Syncope needs the following volumes created for configuration and logs. Each part of Syncope gets it's own directory.  
 | Host                                                 | Container         |
 |------------------------------------------------------|-------------------|
-| InfraInABox/volumes/syncope/logs/core      | /opt/syncope/log  |
-| InfraInABox/volumes/syncope/config/core    | /opt/syncope/conf |
-| InfraInABox/volumes/syncope/logs/console   | /opt/syncope/log  |
-| InfraInABox/volumes/syncope/config/console | /opt/syncope/conf |
-| InfraInABox/volumes/syncope/logs/wa        | /opt/syncope/log  |
-| InfraInABox/volumes/syncope/config/wa      | /opt/syncope/conf |
-| InfraInABox/volumes/syncope/logs/sra       | /opt/syncope/log  |
-| InfraInABox/volumes/syncope/config/sra     | /opt/syncope/conf |
-| InfraInABox/volumes/syncope/logs/enduser    | /opt/syncope/log  |
-| InfraInABox/volumes/syncope/config/enduser | /opt/syncope/conf |
+| $Repo_root/volumes/syncope/logs/core      | /opt/syncope/log  |
+| $Repo_root/volumes/syncope/config/core    | /opt/syncope/conf |
+| $Repo_root/volumes/syncope/logs/console   | /opt/syncope/log  |
+| $Repo_root/volumes/syncope/config/console | /opt/syncope/conf |
+| $Repo_root/volumes/syncope/logs/wa        | /opt/syncope/log  |
+| $Repo_root/volumes/syncope/config/wa      | /opt/syncope/conf |
+| $Repo_root/volumes/syncope/logs/sra       | /opt/syncope/log  |
+| $Repo_root/volumes/syncope/config/sra     | /opt/syncope/conf |
+| $Repo_root/volumes/syncope/logs/enduser    | /opt/syncope/log  |
+| $Repo_root/volumes/syncope/config/enduser | /opt/syncope/conf |
 
 
 ###### Set up 
@@ -124,8 +135,8 @@ Once Syncope is set up you can congigure Sonarqube. If you want to use OpenID Co
 
 https://apereo.github.io/cas/6.5.x/authentication/Syncope-Authentication.html
 
-* InfraInABox/volumes/syncope/config/** -> /opt/syncope/conf
-* InfraInABox/volumes/syncope/logs/** -> /opt/syncope/log
+* $Repo_root/volumes/syncope/config/** -> /opt/syncope/conf
+* $Repo_root/volumes/syncope/logs/** -> /opt/syncope/log
 
 When running in docker, these are paths and ports the applications are accessible from.
 * REST API  http://localhost:18080/syncope/
@@ -136,7 +147,7 @@ When running in docker, these are paths and ports the applications are accessibl
 
 ###### Configuring Syncope
 Syncope is quite large and will take some time to learn. We need to configure a few things before we're ready to use it. 
-We need to define a set of rules, a set of policies, and a set of Application configurations so that Syncope knows who Sonarqube is. We will use SAML to make the connection and get the users info.
+We need to define a set of rules, a set of policies, an authentication module, and a set of application configurations so that Syncope knows who Sonarqube or any other application is. We will use SAML to make the connection and get the users info into the other applications.
 
 Once docker is up and running, you may begin configuring Syncope. 
 
@@ -305,10 +316,10 @@ This defines our "method of authentcation." More specifically it defines a way s
         - And finally, for now, leave the Algorithms as is so none are Selected. This will need to change for a production environment - you'll want only the strongest of them for production. 
 
 
-To harden your syncope system and get it ready for production:
+To harden your Syncope system and get it ready for production:
     * Note the changes mentioned else where for production, and change those.
     * Change the default admin password and force its rotation every month; or disable the user.
-    * Remove Unused, weak, or lowbit algorthyms for the OIDC, OAUTH2, and SAML configuration. 
+    * Remove Unused, weak, or lowbit algorthyms for the OIDC, OAUTH2, SAML, and other auth protocols. 
     * Modify the logging configuration to not emit tokens.
 
 
@@ -317,19 +328,16 @@ To harden your syncope system and get it ready for production:
 ##### Apache ServiceComb
 A microservice tool - it lets you set up and run microservices.
 
-###### Using it
-
-##### Apache OpenWhisk *
+##### Apache OpenWhisk
 A serverless function platform. 
 
-##### Apache Karaf *
+##### Apache Karaf
 An full featured application runtime playing a similar role as ServiceComb
-
 
 ##### Apache Skywalking
 An application Performance monitoring tool. Allows devs, leaders, and the whole team see how each of your applications are performing. 
 
-##### Apache Kafka  *
+##### Apache Kafka
 A Pub-Sub message broker. Allows injestion of notifications to and from systems. 
 
 
@@ -337,7 +345,7 @@ A Pub-Sub message broker. Allows injestion of notifications to and from systems.
 
 
 #### Business Applications
-The following applications will be deployed to and run in the cloud services set up above. The provide some core business, mission critical, functionality including communication,  
+The following applications will be deployed to and run in the cloud services set up above. The provide some core business, mission critical, functionality including: communication, 
 ##### Apache Finrect *
 https://github.com/apache/fineract
 A banking app -- be your own bank!
@@ -355,5 +363,12 @@ Think Webex or Zoom -- but yours and free.
 
 
 #### Honorable Mentions
-##### Apache Cloudstack
-##### Apache Alura
+##### [Apache Cloudstack](https://github.com/apache/cloudstack)
+Cloudstack is a pretty interesting, well known, and highly used cloud solution. However, running it in Docker seems counter-intuitive as it's better when on bare metal.
+##### [Apache Alura](https://github.com/apache/allura)
+Alura is a neat software forge but many of the features it has is also offered by gitlab - and many that aren't. It may still make it in...
+
+
+
+##### Work In Progress
+This is a work in progress that is not yet, and may never be especially without proper configuration, ready for production deployments. Many of the applications listed here may or may not make it into the final Box. But there is a vision and a plan; and this is still a work in progress.
