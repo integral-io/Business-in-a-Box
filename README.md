@@ -1,6 +1,6 @@
 # An infrastructure in a box
 
-###### *DISCLAIMER: This is NOT a production ready installation. There are many configration changes required for production readiness. DO NOT USE AS IS IN PRODUCTION, OR DO SO AT YOUR OWN RISK. MANY CHANGES ARE NOTED HERE BUT THIS NOT CAPTURE ALL OF THE REQUIRED CHANGES. This is a work in progress. You are warned.*
+#### *DISCLAIMER: This is NOT a production ready installation. There are many configration changes required for production readiness. DO NOT USE AS IS IN PRODUCTION, OR DO SO AT YOUR OWN RISK. MANY CHANGES ARE NOTED HERE BUT THIS NOT CAPTURE ALL OF THE REQUIRED CHANGES. This is a work in progress. You are warned.*
 
 Several docker compose files to build up an entire cvloud infrastructure including
 * [Basic Infrastructure](#Basic-Infrastructure)
