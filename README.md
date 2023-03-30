@@ -265,9 +265,10 @@ This defines our "method of authentcation." More specifically it defines a way s
     - Click "Finish"
 * User (Realms > User)
     - 
-* User (Realms > Group)
+* Group (Realms > Group)
     - 
-- Sonarqube OIDC (WA > Client Applications > OIDCRP)
+
+* Sonarqube OIDC (WA > Client Applications > OIDCRP)
     - Set the realm to `/`
     - Set the name to Sonarqube (or some other app name)
     - Set the ID to 1
@@ -282,7 +283,7 @@ This defines our "method of authentcation." More specifically it defines a way s
     - Add all Supported Grant Types and Supported Response Types
     - Ignore Logout Uri
 
-- Sonarqube SAML (WA > Client Applications > SAML2SP)
+* Sonarqube SAML (WA > Client Applications > SAML2SP)
     #### SAML Prequesite
     We must genrerate a private key, a certificate, and a SAML Service Provider's metadata file. The certificate and key will be loaded into Sonarqube when we configure it's end of the SAML protocol. Syncope will also need the certificate. We'll also need to create a PKCS8 formatted version of the private key. These files must be securely transmitted and stored - they are _critical_ to the security of the SAML authentication process.
     Once the cert, and the 2 versions of the key are in place, you can [create a SAML metadata for the service provider](https://www.samltool.com/sp_metadata.php) *Beware: private keys added there are sent to their server. Trust at your own risk and do not use it for production keys.  
