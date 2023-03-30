@@ -324,10 +324,10 @@ This defines our "method of authentcation." More specifically it defines a way s
 
 
 To harden your Syncope system and get it ready for production:
-    * Note the changes mentioned else where for production, and change those.
-    * Change the default admin password and force its rotation every month; or disable the user.
-    * Remove Unused, weak, or lowbit algorthyms for the OIDC, OAUTH2, SAML, and other auth protocols. 
-    * Modify the logging configuration to not emit tokens.
+* Note the changes mentioned else where for production, and change those.
+* Change the default admin password and force its rotation every month; or disable the user.
+* Remove Unused, weak, or lowbit algorthyms for the OIDC, OAUTH2, SAML, and other auth protocols. 
+* Modify the logging configuration to not emit tokens.
 
 
 
