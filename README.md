@@ -352,11 +352,11 @@ A Pub-Sub message broker. Allows injestion of notifications to and from systems.
 
 
 #### Business Applications
-The following applications will be deployed to and run in the cloud services set up above. The provide some core business, mission critical, functionality including: communication, 
+The following applications will be deployed to and run in the cloud services set up above. The provide some core business, mission critical, functionality including communication and E-Commerce.
 ##### [Apache Finrect](https://github.com/apache/fineract)
 A reliable, robust, and affordable core banking solution for financial institutions -- be your own bank!
 ##### [Apache OfBiz](https://github.com/apache/ofbiz-framework)
-A full featured set of services for the entire business.
+Framework components and business applications for ERP, CRM, E-Business/E-Commerce, Supply Chain Management and Manufacturing Resource Planning.
 ##### [Apache Roller](https://github.com/apache/roller)
 A blog application. 
 ##### [Apache James](https://github.com/apache/james-project)
