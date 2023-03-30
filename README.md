@@ -17,6 +17,7 @@ A single docker compose file to build an entire cloud for any business including
 - Create file locations
 
     Several locations will need to be created so the various images' configurations and logs are accessible and modifyable outside the image. Some of these may already exist. 
+    
     | Sonarqube                                  |                     |
     | Host                                       | Container           |
     |--------------------------------------------|---------------------|
