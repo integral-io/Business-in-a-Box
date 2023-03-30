@@ -342,7 +342,7 @@ A serverless function platform.
 An full featured application runtime playing a similar role as ServiceComb
 
 ##### [Apache Skywalking](https://github.com/apache/skywalking)
-An application Performance monitoring tool. Allows devs, leaders, and the whole team see how each of your applications are performing. 
+An Application Performance Monitoring tool. Allows devs, leaders, and the whole team see how each of your Applications are performing. 
 
 ##### [Apache Kafka](https://github.com/apache/kafka)
 A Pub-Sub message broker. Allows injestion of notifications to and from systems. 
@@ -378,3 +378,5 @@ Alura is a neat software forge but many of the features it has is also offered b
 
 ##### Work In Progress
 This is a work in progress that is not yet, and may never be especially without proper configuration, ready for production deployments. Many of the applications listed here may or may not make it into the final Box. But there is a vision and a plan; and this is still a work in progress.
+
+The plan is to include Gitlab, Archivia, and one of ServiceComb or OpenWhisk; followed by the business applications; and then the rest of Cloud Application Runtimes for future applications. 
