@@ -9,7 +9,7 @@ A single docker compose file to build an entire cloud for any business including
 * [Cloud Application Runtimes](#cloud-application-runtimes)
 * [Business Applications](#business-applications)
 
-#### Definitions
+##### Definitions
  - `$Repo_root` when used below where you cloned the repository to. Unless you renamed it when you cloned it, it'll be `<folder you cloned into>/business-in-a-box`
 
 ### General Set Up
@@ -45,47 +45,48 @@ A single docker compose file to build an entire cloud for any business including
 
 - Once those directories are in place, you can `docker-compose up` and wait for the the system to come online and get healthy (several services may restart during bootup).
 
-- Once the system is healthly, begin configuring the following systems in order:
+- Once the system is healthy, you can begin configuring the following systems in order:
     - [Configuring Syncope](#configuring-syncope)
     - [Configuring Sonarqube](#configuring-sonarqube)
     - [More to come...](#work-in-progress)
   
 
-#### Basic Infrastructure:
-##### NginX
+### Basic Infrastructure:
+#### NginX
 Nginx is a reverse proxy. It'll let the outside world communicate with the inside of the docker container transparently. 
 
-Because the Docker containers and Docker host end up using different URLs, we have to set up a reverse proxy. But don't worry, its in docker -- all that means is that the browser and the backend apps won't know the difference.
+Because the Docker containers and Docker host end up using different URLs, we have to set up a reverse proxy. But don't worry, its in docker -- all that means is that the browser and the backend apps *mostly* won't know the difference.
 
-The proxy should have for security purposes: *TODO: need to set these up still - seems we can function in a development environment with out it.*
+The proxy _should have_, for security purposes: *TODO: need to set these up still - seems we can function in a development environment with out it.*
 - An SSL certificate to deliver to clients.
 - An SSL certificate to use between the services and the proxy.
 
-But the proxy needs in order to function:
-- and the reverse proxy rules that map the two together. 
-These rules are defined in [Nginx's configuration volume](./volumes/config/nginx). 
-I will not go into how to configure [Nginx's rules](http://nginx.org/en/docs/), the provided rules should work out of the box.
+But the proxy _needs_ in order to function:
+- the proxy rules to map ouside docker -> inside docker
 
-#### Source Code Management and Analysis
+These rules are defined in [Nginx's configuration volume](./volumes/config/nginx). 
+I will not go into how to configure [Nginx's rules](http://nginx.org/en/docs/), the provided rules should work out of the box in a development enviornment. 
+
+### Source Code Management and Analysis
 The following tools are useful for source code development, management, analysis, and deployment.
 
-##### Gitlab
+#### [Gitlab](https://gitlab.com/gitlab-org/gitlab)
 A full featured source code repository with OAuth capabilities, and even CICD. 
 
-##### SonarQube
+#### [SonarQube](https://github.com/SonarSource/sonarqube)
 A static code analysis tool -- helps find bugs and security issues quicker. 
 When built the first time, the default admin username and password are both `admin` and you will be forced to change it on the first login. I changed it to password, but you must use something stronger especially in production and test environments. 
 
 The following volumes are required to have access to the configuration, logs, and data that sonarqube uses. 
 They map from the same locations on the docker host to the service's expected location.
-| Host                                                  | Container           |
-|-------------------------------------------------------|---------------------|
+| Host                                                 | Container           |
+|------------------------------------------------------|---------------------|
 | $Repo_root/volumes/sonarqube/config/**               | /opt/sonarqube/conf |
 | $Repo_root/volumes/sonarqube/logs/**                 | /opt/sonarqube/log  |
 | $Repo_root/volumes/sonarqube/extensions/**           | /opt/sonarqube/conf |
 | $Repo_root/volumes/sonarqube/data/**                 | /opt/sonarqube/log  |
 
-###### Configuring SonarQube
+##### Configuring SonarQube
 Sonarqube can use SAML to perform AuthNZ.  Syncope needs a [Service Provider (SP) Metadata file](sonarqube/volumes/syncope/config/wa/saml/sonarqube.0.xml) for Sonarqube, which itself needs a certificate if you want the added security of message signing (you do in prod). This file will be loaded into Syncope, and the data in it will also be added to Sonarqube. [Sonarqube's documentation](https://docs.sonarqube.org/latest/instance-administration/authentication/saml/overview/) on SAML is useful. The `sonar.auth.saml.sp.privateKey.secured`, and `sonar.auth.saml.sp.certificate.secured` define the Private Key and Certficate which can be generated [quite easily](https://www.baeldung.com/openssl-self-signed-cert#creating-a-self-signed-certificate) but do note that the key needs to be converted to PKCS8 format. This step is defined below as [Syncope's SAML Prequesite](#SAML-Prequesite) -- every SAML implementation requires this if they want to use message siging (again, you do).
 
 We will now configure Sonarqube to use Syncope as the Identity Provider (IdP).
@@ -103,14 +104,16 @@ We will now configure Sonarqube to use Syncope as the Identity Provider (IdP).
 - Set the Service provider private key to the PKCS8 key generated in the [Syncope + Sonarqube SAML Prereqs](#SAML-Prequesite).
 - Set the Service provider certificate to the certificate generated in the [Syncope + Sonarqube SAML Prereqs](#SAML-Prequesite).
 
-##### Apache Archivia *
+#### [Apache Archivia](https://github.com/apache/archiva)
 An artifact repository - it stores and provides access to code artifacts such as executables, jars, etc. 
 
-#### Identity Access Management
-##### Apache Syncope
+### Identity Access Management
+#### [Apache Syncope](https://github.com/apache/syncope)
 A full featured Identity Provider (IdP) and Identity Access Management (IAM) suite -- allowing OpenId Connect (OIDC), and Single-Sign On (SSO) for the applications deployed here. It includes several pieces: Console, Web Access (WA), Secured Remote Access (SRA), and End User. The Console is used to administor Users, Roles, and IAM generally. WA and SRA are both used to handle logins between systems each with a specific target. Enduser allows users to manage their identity as its known to the IdP. 
 
 Some [very helpful and useful blogs about Apache Syncope](https://www.tirasa.net/en/blog/apache-syncope)
+
+###### Do note that Syncope's WA is built on [Apache CAS](https://apereo.github.io/)
 
 * The Console (Default credentials are `admin` and `passsword`)
 * WA & SRA - the Access portal for SSO
@@ -132,24 +135,21 @@ Syncope needs the following volumes created for configuration and logs. Each par
 | $Repo_root/volumes/syncope/config/enduser | /opt/syncope/conf |
 
 
-###### Set up 
-
+##### Syncope Set up 
 The following volumes are required to have access to the configuration, logs, and data that syncope uses. 
 They map from the same locations on the docker host to the service's expected location. I've found it's quite easy to copy over the default configuration in the container to the host so that Syncope can be easily configured. 
-
-Once Syncope is set up you can congigure Sonarqube. If you want to use OpenID Connect (OIDC) instead, you will need a plugin for SonarQube -- it does not support OIDC natively. We will use SAML instead. Syncope supports several protocols.
-
-https://apereo.github.io/cas/6.5.x/authentication/Syncope-Authentication.html
 
 * $Repo_root/volumes/syncope/config/** -> /opt/syncope/conf
 * $Repo_root/volumes/syncope/logs/** -> /opt/syncope/log
 
 When running in docker, these are paths and ports the applications are accessible from.
-* REST API  http://localhost:18080/syncope/
-* Admin UI http://localhost:28080/syncope-console/ * Credentials: admin / password * 
-* End-user UI http://localhost:38080/syncope-enduser/
-* WA http://localhost:48080/syncope-wa/ 
-* SRA http://localhost:58080/
+* REST API  http://localhost/syncope/
+* Admin UI http://localhost/console/ * Credentials: admin / password * 
+* End-user UI http://localhost/user/
+* WA http://localhost/wa/ 
+* SRA http://localhost/sra
+
+Once Syncope is set up you can configure Sonarqube. If you want to use OpenID Connect (OIDC) instead of SAML, you will need a plugin for SonarQube as it does not support OIDC natively. Syncope, fortunately, supports several protocols.
 
 ###### Configuring Syncope
 Syncope is quite large and will take some time to learn. We need to configure a few things before we're ready to use it. 
@@ -331,19 +331,19 @@ To harden your Syncope system and get it ready for production:
 
 
 #### Cloud Application Runtimes
-##### Apache ServiceComb
+##### [Apache ServiceComb](https://servicecomb.apache.org/)
 A microservice tool - it lets you set up and run microservices.
 
-##### Apache OpenWhisk
+##### [Apache OpenWhisk](https://github.com/apache/openwhisk)
 A serverless function platform. 
 
-##### Apache Karaf
+##### [Apache Karaf](https://github.com/apache/karaf)
 An full featured application runtime playing a similar role as ServiceComb
 
-##### Apache Skywalking
+##### [Apache Skywalking](https://github.com/apache/skywalking)
 An application Performance monitoring tool. Allows devs, leaders, and the whole team see how each of your applications are performing. 
 
-##### Apache Kafka
+##### [Apache Kafka](https://github.com/apache/kafka)
 A Pub-Sub message broker. Allows injestion of notifications to and from systems. 
 
 
@@ -352,16 +352,15 @@ A Pub-Sub message broker. Allows injestion of notifications to and from systems.
 
 #### Business Applications
 The following applications will be deployed to and run in the cloud services set up above. The provide some core business, mission critical, functionality including: communication, 
-##### Apache Finrect *
-https://github.com/apache/fineract
-A banking app -- be your own bank!
-##### Apache OfBiz *
+##### [Apache Finrect](https://github.com/apache/fineract)
+A reliable, robust, and affordable core banking solution for financial institutions -- be your own bank!
+##### [Apache OfBiz](https://github.com/apache/ofbiz-framework)
 A full featured set of services for the entire business.
-##### Apache Roller *
+##### [Apache Roller](https://github.com/apache/roller)
 A blog application. 
-##### Apache James *
+##### [Apache James](https://github.com/apache/james-project)
 An Email server
-##### Apache OpenMeetings *
+##### [Apache OpenMeetings](https://github.com/apache/openmeetings)
 Think Webex or Zoom -- but yours and free.
 
 
