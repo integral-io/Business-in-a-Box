@@ -21,11 +21,13 @@ A single docker compose file to build an entire cloud for any business including
 - Create file locations
     Several locations will need to be created so the various images' configurations and logs are accessible and modifyable outside the image. Some of these may already exist. There are also several named volumes that do not need to be created. 
     - Nginx (here we "volume" a file)
+
     | Host                           | Container                 |
     |--------------------------------|---------------------------|
     | $Nginx_HOME/config/nginx.conf  | /etc/nginx/nginx.conf     |
 
     - SonarQube:
+
     | Host                          | Container                 |
     |-------------------------------|---------------------------|
     | $Sonarqube_HOME/config        | /opt/sonarqube/conf       |
@@ -34,31 +36,35 @@ A single docker compose file to build an entire cloud for any business including
     | $Sonarqube_HOME/data          | /opt/sonarqube/log        |
 
     - Syncope Core:
+
     | Host                          | Container           |
     |-------------------------------|---------------------|
     | $Syncope_HOME/logs/core       | /opt/syncope/log    |
     | $Syncope_HOME/config/core     | /opt/syncope/conf   |
 
-
     - Syncope Console:
+
     | Host                          | Container           |
     |-------------------------------|---------------------|
     | $Syncope_HOME/logs/console    | /opt/syncope/log    |
     | $Syncope_HOME/config/console  | /opt/syncope/conf   |
 
     - Syncope WA: 
+
     | Host                          | Container           |
     |-------------------------------|---------------------|
     | $Syncope_HOME/logs/wa         | /opt/syncope/log    |
     | $Syncope_HOME/config/wa       | /opt/syncope/conf   |
 
     - Syncope Sra:
+
     | Host                          | Container           |
     |-------------------------------|---------------------|
     | $Syncope_HOME/logs/sra        | /opt/syncope/log    |
     | $Syncope_HOME/config/sra      | /opt/syncope/conf   |
 
     - Syncope End User:
+    
     | Host                          | Container           |
     |-------------------------------|---------------------|
     | $Syncope_HOME/logs/enduser    | /opt/syncope/log    |
