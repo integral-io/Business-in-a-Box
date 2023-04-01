@@ -70,7 +70,7 @@ A single docker compose file to build an entire cloud for any business including
     | $Syncope_HOME/logs/enduser    | /opt/syncope/log    |
     | $Syncope_HOME/config/enduser  | /opt/syncope/conf   |
 
-- Once those directories are in place, you can `docker-compose up` and wait for the the system to come online and get healthy (several services may restart during bootup).
+- Once those directories are in place, you can `docker compose up` and wait for the the system to come online and get healthy (several services may restart during bootup).
 
 - Once the system is healthy, you can begin configuring the following systems in order:
     - [Configuring Syncope](#configuring-syncope)
