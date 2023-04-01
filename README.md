@@ -1,6 +1,6 @@
 # An infrastructure in a box
 
-#### *DISCLAIMER: This is NOT a production ready installation. There are many configration changes required for production readiness. DO NOT USE AS IS IN PRODUCTION, OR DO SO AT YOUR OWN RISK. MANY CHANGES ARE NOTED HERE BUT THIS NOT CAPTURE ALL OF THE REQUIRED CHANGES. This is a work in progress. You are warned.*
+#### *DISCLAIMER: This is NOT a production ready installation. There are many configration changes required for production readiness. DO NOT USE AS IS IN PRODUCTION, OR DO SO AT YOUR OWN RISK. MANY CHANGES ARE NOTED HERE BUT THIS DOES NOT CAPTURE ALL OF THE REQUIRED CHANGES. This is a work in progress. You are warned.*
 
 A single docker compose file to build an entire cloud for any business including
 * [Basic Infrastructure](#Basic-Infrastructure)
@@ -10,54 +10,79 @@ A single docker compose file to build an entire cloud for any business including
 * [Business Applications](#business-applications)
 
 ##### Definitions
+###### Define these as enviornment variables, or use the [.env](./.env) file
  - `$Repo_root` when used below where you cloned the repository to. Unless you renamed it when you cloned it, it'll be `<folder you cloned into>/business-in-a-box`
+ - `$Sonarqube_HOME` is the volume directory for SonarQube's configs and logs (`$Repo_ROOT/volumes/sonarqube`)
+ - `$Syncope_HOME` is the volume directory for Syncopes's configs and logs (`$Repo_ROOT/volumes/syncope`)
+ - `$Nginx_HOME` is the volume for Nginx's configs and logs (`$Repo_ROOT/volumes/nginx`)
 
 ### General Set Up
 - Install Docker.
 - Create file locations
+    Several locations will need to be created so the various images' configurations and logs are accessible and modifyable outside the image. Some of these may already exist. There are also several named volumes that do not need to be created. 
+    - Nginx (here we "volume" a file)
+    | Host                           | Container                 |
+    |--------------------------------|---------------------------|
+    | $Nginx_HOME/config/nginx.conf  | /etc/nginx/nginx.conf     |
 
-    Several locations will need to be created so the various images' configurations and logs are accessible and modifyable outside the image. Some of these may already exist. 
+    - SonarQube:
+    | Host                          | Container                 |
+    |-------------------------------|---------------------------|
+    | $Sonarqube_HOME/config        | /opt/sonarqube/conf       |
+    | $Sonarqube_HOME/logs          | /opt/sonarqube/log        |
+    | $Sonarqube_HOME/extensions    | /opt/sonarqube/extensions |
+    | $Sonarqube_HOME/data          | /opt/sonarqube/log        |
 
-    - Sonarqube:
+    - Syncope Core:
+    | Host                          | Container           |
+    |-------------------------------|---------------------|
+    | $Syncope_HOME/logs/core       | /opt/syncope/log    |
+    | $Syncope_HOME/config/core     | /opt/syncope/conf   |
 
-    | Host                                       | Container           |
-    |--------------------------------------------|---------------------|
-    | $Repo_root/volumes/sonarqube/config        | /opt/sonarqube/conf |
-    | $Repo_root/volumes/sonarqube/logs          | /opt/sonarqube/log  |
-    | $Repo_root/volumes/extensions/sonarqube    | /opt/sonarqube/conf |
-    | $Repo_root/volumes/sonarqube/data          | /opt/sonarqube/log  |
-    |                                            |                     |
 
-    - Syncope:
+    - Syncope Console:
+    | Host                          | Container           |
+    |-------------------------------|---------------------|
+    | $Syncope_HOME/logs/console    | /opt/syncope/log    |
+    | $Syncope_HOME/config/console  | /opt/syncope/conf   |
 
-    | Host                                       | Container           |
-    |--------------------------------------------|---------------------|
-    | $Repo_root/volumes/syncope/logs/core       | /opt/syncope/log    |
-    | $Repo_root/volumes/syncope/config/core     | /opt/syncope/conf   |
-    | $Repo_root/volumes/syncope/logs/console    | /opt/syncope/log    |
-    | $Repo_root/volumes/syncope/config/console  | /opt/syncope/conf   |
-    | $Repo_root/volumes/syncope/logs/wa         | /opt/syncope/log    |
-    | $Repo_root/volumes/syncope/config/wa       | /opt/syncope/conf   |
-    | $Repo_root/volumes/syncope/logs/sra        | /opt/syncope/log    |
-    | $Repo_root/volumes/syncope/config/sra      | /opt/syncope/conf   |
-    | $Repo_root/volumes/syncope/logs/enduser    | /opt/syncope/log    |
-    | $Repo_root/volumes/syncope/config/enduser  | /opt/syncope/conf   |
+    - Syncope WA: 
+    | Host                          | Container           |
+    |-------------------------------|---------------------|
+    | $Syncope_HOME/logs/wa         | /opt/syncope/log    |
+    | $Syncope_HOME/config/wa       | /opt/syncope/conf   |
+
+    - Syncope Sra:
+    | Host                          | Container           |
+    |-------------------------------|---------------------|
+    | $Syncope_HOME/logs/sra        | /opt/syncope/log    |
+    | $Syncope_HOME/config/sra      | /opt/syncope/conf   |
+
+    - Syncope End User:
+    | Host                          | Container           |
+    |-------------------------------|---------------------|
+    | $Syncope_HOME/logs/enduser    | /opt/syncope/log    |
+    | $Syncope_HOME/config/enduser  | /opt/syncope/conf   |
 
 - Once those directories are in place, you can `docker-compose up` and wait for the the system to come online and get healthy (several services may restart during bootup).
 
 - Once the system is healthy, you can begin configuring the following systems in order:
     - [Configuring Syncope](#configuring-syncope)
-    - [Configuring Sonarqube](#configuring-sonarqube)
+    - [Configuring SonarQube](#configuring-sonarqube)
     - [More to come...](#work-in-progress)
   
 
 ### Basic Infrastructure:
 #### NginX
-Nginx is a reverse proxy. It'll let the outside world communicate with the inside of the docker container transparently. 
+Nginx is a reverse proxy. It'll let the outside world communicate with the inside of the docker container transparently. Nginx Requires the following volume. Here we specify a file which works just as well.
+    | Host                           | Container                 |
+    |--------------------------------|---------------------------|
+    | $Nginx_HOME/config/nginx.conf  | /etc/nginx/nginx.conf     |
 
 Because the Docker containers and Docker host end up using different URLs, we have to set up a reverse proxy. But don't worry, its in docker -- all that means is that the browser and the backend apps *mostly* won't know the difference.
 
-The proxy _should have_, for security purposes: *TODO: need to set these up still - seems we can function in a development environment with out it.*
+The proxy _should have_, for security purposes:
+*TODO: need to set these up still - seems we can function in a development environment with out it.*
 - An SSL certificate to deliver to clients.
 - An SSL certificate to use between the services and the proxy.
 
@@ -66,6 +91,12 @@ But the proxy _needs_ in order to function:
 
 These rules are defined in [Nginx's configuration volume](./volumes/config/nginx). 
 I will not go into how to configure [Nginx's rules](http://nginx.org/en/docs/), the provided rules should work out of the box in a development enviornment. 
+
+#### Zookeeper
+Zookeeper is a service discovery tool that Syncope uses to discover itself. We don't need to configure it. 
+
+#### Postgres 
+A database. Used by both Syncope and SonarQube.
 
 ### Source Code Management and Analysis
 The following tools are useful for source code development, management, analysis, and deployment.
@@ -87,9 +118,9 @@ They map from the same locations on the docker host to the service's expected lo
 | $Repo_root/volumes/sonarqube/data/**                 | /opt/sonarqube/log  |
 
 ##### Configuring SonarQube
-Sonarqube can use SAML to perform AuthNZ.  Syncope needs a [Service Provider (SP) Metadata file](sonarqube/volumes/syncope/config/wa/saml/sonarqube.0.xml) for Sonarqube, which itself needs a certificate if you want the added security of message signing (you do in prod). This file will be loaded into Syncope, and the data in it will also be added to Sonarqube. [Sonarqube's documentation](https://docs.sonarqube.org/latest/instance-administration/authentication/saml/overview/) on SAML is useful. The `sonar.auth.saml.sp.privateKey.secured`, and `sonar.auth.saml.sp.certificate.secured` define the Private Key and Certficate which can be generated [quite easily](https://www.baeldung.com/openssl-self-signed-cert#creating-a-self-signed-certificate) but do note that the key needs to be converted to PKCS8 format. This step is defined below as [Syncope's SAML Prequesite](#SAML-Prequesite) -- every SAML implementation requires this if they want to use message siging (again, you do).
+SonarQube can use SAML to perform AuthNZ.  Syncope needs a [Service Provider (SP) Metadata file](sonarqube/volumes/syncope/config/wa/saml/sonarqube.0.xml) for SonarQube, which itself needs a certificate if you want the added security of message signing (you do in prod). This file will be loaded into Syncope, and the data in it will also be added to SonarQube. [SonarQube's documentation](https://docs.sonarqube.org/latest/instance-administration/authentication/saml/overview/) on SAML is useful. The `sonar.auth.saml.sp.privateKey.secured`, and `sonar.auth.saml.sp.certificate.secured` define the Private Key and Certficate which can be generated [quite easily](https://www.baeldung.com/openssl-self-signed-cert#creating-a-self-signed-certificate) but do note that the key needs to be converted to PKCS8 format. This step is defined below as [Syncope's SAML Prequesite](#SAML-Prequesite) -- every SAML implementation requires this if they want to use message siging (again, you do).
 
-We will now configure Sonarqube to use Syncope as the Identity Provider (IdP).
+We will now configure SonarQube to use Syncope as the Identity Provider (IdP).
 - Login to sonarqube as Admin, and navigate to Administration > Authentication > SAML:
 - Set the Application Id to `http://localhost/wa/sp/sonarqube` -- this must match what is defined in Syncope.
 - Set the Provider Name to `Syncope` -- this will display on the login page.
@@ -101,8 +132,8 @@ We will now configure Sonarqube to use Syncope as the Identity Provider (IdP).
 - Set SAML user email attribute to `email`
 - Set SAML group attribute to `groups`
 - Ensure Sign Requests is _checked_.
-- Set the Service provider private key to the PKCS8 key generated in the [Syncope + Sonarqube SAML Prereqs](#SAML-Prequesite).
-- Set the Service provider certificate to the certificate generated in the [Syncope + Sonarqube SAML Prereqs](#SAML-Prequesite).
+- Set the Service provider private key to the PKCS8 key generated in the [Syncope + SonarQube SAML Prereqs](#SAML-Prequesite).
+- Set the Service provider certificate to the certificate generated in the [Syncope + SonarQube SAML Prereqs](#SAML-Prequesite).
 
 #### [Apache Archivia](https://github.com/apache/archiva)
 An artifact repository - it stores and provides access to code artifacts such as executables, jars, etc. 
@@ -112,48 +143,55 @@ An artifact repository - it stores and provides access to code artifacts such as
 A full featured Identity Provider (IdP) and Identity Access Management (IAM) suite -- allowing OpenId Connect (OIDC), and Single-Sign On (SSO) for the applications deployed here. It includes several pieces: Console, Web Access (WA), Secured Remote Access (SRA), and End User. The Console is used to administor Users, Roles, and IAM generally. WA and SRA are both used to handle logins between systems each with a specific target. Enduser allows users to manage their identity as its known to the IdP. 
 
 Some [very helpful and useful blogs about Apache Syncope](https://www.tirasa.net/en/blog/apache-syncope)
-
-###### Do note that Syncope's WA is built on [Apache CAS](https://apereo.github.io/)
+*Do note that Syncope's WA is built on [Apache CAS](https://apereo.github.io/)*
 
 * The Console (Default credentials are `admin` and `passsword`)
 * WA & SRA - the Access portal for SSO
 * End User - An access portal where users can maintain their data in the system.
-* Core - required to be running for things to work. 
+* Core - required to be running for things to work.
 
-Syncope needs the following volumes created for configuration and logs. Each part of Syncope gets it's own directory.  
-| Host                                                 | Container         |
-|------------------------------------------------------|-------------------|
-| $Repo_root/volumes/syncope/logs/core      | /opt/syncope/log  |
-| $Repo_root/volumes/syncope/config/core    | /opt/syncope/conf |
-| $Repo_root/volumes/syncope/logs/console   | /opt/syncope/log  |
-| $Repo_root/volumes/syncope/config/console | /opt/syncope/conf |
-| $Repo_root/volumes/syncope/logs/wa        | /opt/syncope/log  |
-| $Repo_root/volumes/syncope/config/wa      | /opt/syncope/conf |
-| $Repo_root/volumes/syncope/logs/sra       | /opt/syncope/log  |
-| $Repo_root/volumes/syncope/config/sra     | /opt/syncope/conf |
-| $Repo_root/volumes/syncope/logs/enduser    | /opt/syncope/log  |
-| $Repo_root/volumes/syncope/config/enduser | /opt/syncope/conf |
+When running in docker, these are paths and ports the applications are accessible from. You can verify these paths in the [Nginx Config](./volumes/nginx/config/nginx.conf)
+* REST API  http://localhost/syncope/rest
+* Admin UI http://localhost/console * Credentials: admin / password * 
+* End-user UI http://localhost/user
+* WA http://localhost/wa
+* SRA http://localhost/sra
 
 
 ##### Syncope Set up 
-The following volumes are required to have access to the configuration, logs, and data that syncope uses. 
-They map from the same locations on the docker host to the service's expected location. I've found it's quite easy to copy over the default configuration in the container to the host so that Syncope can be easily configured. 
+The following volumes are required to have access to the configuration, logs, and data that Syncope uses. 
+*They map to the same locations on the docker container. I've found it's quite easy to copy over the default configuration in the container to the host so that Syncope can be easily configured - if you accidently lose your config.*
+- Syncope Core:
+    | Host                          | Container           |
+    |-------------------------------|---------------------|
+    | $Syncope_HOME/logs/core       | /opt/syncope/log    |
+    | $Syncope_HOME/config/core     | /opt/syncope/conf   |
+- Syncope Console:
+    | Host                          | Container           |
+    |-------------------------------|---------------------|
+    | $Syncope_HOME/logs/console    | /opt/syncope/log    |
+    | $Syncope_HOME/config/console  | /opt/syncope/conf   |
+- Syncope WA: 
+    | Host                          | Container           |
+    |-------------------------------|---------------------|
+    | $Syncope_HOME/logs/wa         | /opt/syncope/log    |
+    | $Syncope_HOME/config/wa       | /opt/syncope/conf   |
+- Syncope Sra:
+    | Host                          | Container           |
+    |-------------------------------|---------------------|
+    | $Syncope_HOME/logs/sra        | /opt/syncope/log    |
+    | $Syncope_HOME/config/sra      | /opt/syncope/conf   |
+- Syncope End User:
+    | Host                          | Container           |
+    |-------------------------------|---------------------|
+    | $Syncope_HOME/logs/enduser    | /opt/syncope/log    |
+    | $Syncope_HOME/config/enduser  | /opt/syncope/conf   |
 
-* $Repo_root/volumes/syncope/config/** -> /opt/syncope/conf
-* $Repo_root/volumes/syncope/logs/** -> /opt/syncope/log
-
-When running in docker, these are paths and ports the applications are accessible from.
-* REST API  http://localhost/syncope/
-* Admin UI http://localhost/console/ * Credentials: admin / password * 
-* End-user UI http://localhost/user/
-* WA http://localhost/wa/ 
-* SRA http://localhost/sra
-
-Once Syncope is set up you can configure Sonarqube. If you want to use OpenID Connect (OIDC) instead of SAML, you will need a plugin for SonarQube as it does not support OIDC natively. Syncope, fortunately, supports several protocols.
+Once Syncope is running and configured you can then configure SonarQube. If you want to use OpenID Connect (OIDC) instead of SAML, you will need a plugin for SonarQube as it does not support OIDC natively. Syncope, fortunately, supports several protocols.
 
 ###### Configuring Syncope
 Syncope is quite large and will take some time to learn. We need to configure a few things before we're ready to use it. 
-We need to define a set of rules, a set of policies, an authentication module, and a set of application configurations so that Syncope knows who Sonarqube or any other application is. We will use SAML to make the connection and get the users info into the other applications.
+We need to define a set of rules, a set of policies, an authentication module, and a set of application configurations so that Syncope knows who SonarQube or any other application is. We will use SAML to make the connection and get the users info into the other applications.
 
 Once docker is up and running, you may begin configuring Syncope. 
 
@@ -233,7 +271,8 @@ Once docker is up and running, you may begin configuring Syncope.
         - Click the new Row and then Configuration in the grey popout menu to the right.
         - In the popup menu
             - syncopeUserAttr_email and syncopeUserAttr_username
-    
+
+
 
     - Authnetication (Configuration > Policies > Authentication)
         - Click the + button to add a new Authentication Policy and:
@@ -268,7 +307,7 @@ This defines our "method of authentcation." More specifically it defines a way s
 * Group (Realms > Group)
     - 
 
-* Sonarqube OIDC (WA > Client Applications > OIDCRP)
+* SonarQube OIDC (WA > Client Applications > OIDCRP)
     - Set the realm to `/`
     - Set the name to Sonarqube (or some other app name)
     - Set the ID to 1
@@ -276,24 +315,24 @@ This defines our "method of authentcation." More specifically it defines a way s
     - Set the Access to policy to the one created earlier.
     - Ignore the Attribute Release Policies
     - Set the Authentiocation Policy to the one created earlier.
-    - Set the Client ID and Secret -- REMEMBER THESE VALUES, you'll need them later to set up the OIDC IDP in the other application -- in this case its Sonarqube and thats the  app that'll get these values, but you could very well have another application defined here and it must use its own values for these fields. This is how Syncope "knows" the application and allows AuthNZ to ocurr through it.
+    - Set the Client ID and Secret -- REMEMBER THESE VALUES, you'll need them later to set up the OIDC IDP in the other application -- in this case its SonarQube and thats the  app that'll get these values, but you could very well have another application defined here and it must use its own values for these fields. This is how Syncope "knows" the application and allows AuthNZ to ocurr through it.
     - Check `Sign IdToken`, `JWT Access Token`, and `Bypass Approval Prompt`
     - Set the Subject Type to `PUBLIC`
     - Set the `redirect_uri` to `http://localhost:9000/oauth2/callback/oidc` if you're setting up sonarqube, or to the correct url if you're setting up a different application.
     - Add all Supported Grant Types and Supported Response Types
     - Ignore Logout Uri
 
-* Sonarqube SAML (WA > Client Applications > SAML2SP)
+* SonarQube SAML (WA > Client Applications > SAML2SP)
     #### SAML Prequesite
-    We must genrerate a private key, a certificate, and a SAML Service Provider's metadata file. The certificate and key will be loaded into Sonarqube when we configure it's end of the SAML protocol. Syncope will also need the certificate. We'll also need to create a PKCS8 formatted version of the private key. These files must be securely transmitted and stored - they are _critical_ to the security of the SAML authentication process.
+    We must genrerate a private key, a certificate, and a SAML Service Provider's metadata file. The certificate and key will be loaded into SonarQube when we configure it's end of the SAML protocol. Syncope will also need the certificate. We'll also need to create a PKCS8 formatted version of the private key. These files must be securely transmitted and stored - they are _critical_ to the security of the SAML authentication process.
     Once the cert, and the 2 versions of the key are in place, you can [create a SAML metadata for the service provider](https://www.samltool.com/sp_metadata.php) *Beware: private keys added there are sent to their server. Trust at your own risk and do not use it for production keys.  
     
-    ###### Protect these files like you protect your identity because that's literally what these files are - the identity of Sonarqube as far as Syncope is concerned. If these are leaked then the authentication process is no longer secure. In production store them in a secrets manager. 
+    ###### Protect these files like you protect your identity because that's literally what these files are - the identity of SonarQube as far as Syncope is concerned. If these are leaked then the authentication process is no longer secure. In production store them in a secrets manager. 
     ```
     $ openssl req -x509 -newkey rsa:4096 -keyout sonarqube.key -out sonarqube.crt -days 365 # generate a new key and cert that'll last for a year.
     $ openssl pkcs8 -topk8 -in sonarqube.key -out sonarqube.pkcs8.key -nocrypt # create PKCS8 version of the private key
     ```
-    [Example Metadata file](./volumes/syncope/config/wa/saml/sonarqube.0.xml) This file is the file used by Syncope to validate the data Sonarqube sends it when doing a SAML exchange. All Service Provider metadata files will look similar with different values for various field such as `EntityId` and `validUntil`. 
+    [Example Metadata file](./volumes/syncope/config/wa/saml/sonarqube.0.xml) This file is the file used by Syncope to validate the data SonarQube sends it when doing a SAML exchange. All Service Provider metadata files will look similar with different values for various field such as `EntityId` and `validUntil`. 
     ```
         Double check your validUntil field -- it must be a future date.
     ```
@@ -301,13 +340,13 @@ This defines our "method of authentcation." More specifically it defines a way s
     - Click the Green Plus Icon and in the Popup menu:
         - Set the Realm to `\`.
         - Set the Name to `sonarqube`.
-        - Set the ID to 1.
+        - Set the ID to 0.
         - Set the Description to nothing or whatever you want.
         - Set the Access Policy to the one we defined earlier `Default Access Policy`.
         - Set the Attribute Release Policy to the one we defined earlier `Default Attribute Release Policy`.
         - Set the Authentication Policy to the one we defined earlier `Default Authentication Policy`.
         - Leave the Theme blank.
-        - Set the EntityId to `http://localhost/wa/sp/sonarqube` or whatever you've defined in Sonarqube's metadata.
+        - Set the EntityId to `http://localhost/wa/sp/sonarqube` or whatever you've defined in SonarQube's metadata.
         - Set the Metadata Location to `file:///opt/syncope/conf/saml/sonarqube.0.xml` -- this path is a docker container path, linked in via a volume. What is in the repository should be good enough to get things started, but you'll have tpo update it for production use. 
         - Leave the Metadata Signature Location blank -- this will need to be set for production.
         - Ensure Sign Assertions is unchecked.
@@ -328,6 +367,7 @@ To harden your Syncope system and get it ready for production:
 * Change the default admin password and force its rotation every month; or disable the user.
 * Remove Unused, weak, or lowbit algorthyms for the OIDC, OAUTH2, SAML, and other auth protocols. 
 * Modify the logging configuration to not emit tokens.
+* Turn off the self-registration in the Enduser app; or otherwise control when, what, and how users can self-register. 
 
 
 
