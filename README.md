@@ -64,7 +64,7 @@ A single docker compose file to build an entire cloud for any business including
     | $Syncope_HOME/config/sra      | /opt/syncope/conf   |
 
     - Syncope End User:
-    
+
     | Host                          | Container           |
     |-------------------------------|---------------------|
     | $Syncope_HOME/logs/enduser    | /opt/syncope/log    |
@@ -81,9 +81,9 @@ A single docker compose file to build an entire cloud for any business including
 ### Basic Infrastructure:
 #### NginX
 Nginx is a reverse proxy. It'll let the outside world communicate with the inside of the docker container transparently. Nginx Requires the following volume. Here we specify a file which works just as well.
-    | Host                           | Container                 |
-    |--------------------------------|---------------------------|
-    | $Nginx_HOME/config/nginx.conf  | /etc/nginx/nginx.conf     |
+| Host                           | Container                 |
+|--------------------------------|---------------------------|
+| $Nginx_HOME/config/nginx.conf  | /etc/nginx/nginx.conf     |
 
 Because the Docker containers and Docker host end up using different URLs, we have to set up a reverse proxy. But don't worry, its in docker -- all that means is that the browser and the backend apps *mostly* won't know the difference.
 
@@ -116,12 +116,12 @@ When built the first time, the default admin username and password are both `adm
 
 The following volumes are required to have access to the configuration, logs, and data that sonarqube uses. 
 They map from the same locations on the docker host to the service's expected location.
-| Host                                                 | Container           |
-|------------------------------------------------------|---------------------|
-| $Repo_root/volumes/sonarqube/config/**               | /opt/sonarqube/conf |
-| $Repo_root/volumes/sonarqube/logs/**                 | /opt/sonarqube/log  |
-| $Repo_root/volumes/sonarqube/extensions/**           | /opt/sonarqube/conf |
-| $Repo_root/volumes/sonarqube/data/**                 | /opt/sonarqube/log  |
+| Host                          | Container                 |
+|-------------------------------|---------------------------|
+| $Sonarqube_HOME/config        | /opt/sonarqube/conf       |
+| $Sonarqube_HOME/logs          | /opt/sonarqube/log        |
+| $Sonarqube_HOME/extensions    | /opt/sonarqube/extensions |
+| $Sonarqube_HOME/data          | /opt/sonarqube/log        |
 
 ##### Configuring SonarQube
 SonarQube can use SAML to perform AuthNZ.  Syncope needs a [Service Provider (SP) Metadata file](sonarqube/volumes/syncope/config/wa/saml/sonarqube.0.xml) for SonarQube, which itself needs a certificate if you want the added security of message signing (you do in prod). This file will be loaded into Syncope, and the data in it will also be added to SonarQube. [SonarQube's documentation](https://docs.sonarqube.org/latest/instance-administration/authentication/saml/overview/) on SAML is useful. The `sonar.auth.saml.sp.privateKey.secured`, and `sonar.auth.saml.sp.certificate.secured` define the Private Key and Certficate which can be generated [quite easily](https://www.baeldung.com/openssl-self-signed-cert#creating-a-self-signed-certificate) but do note that the key needs to be converted to PKCS8 format. This step is defined below as [Syncope's SAML Prequesite](#SAML-Prequesite) -- every SAML implementation requires this if they want to use message siging (again, you do).
